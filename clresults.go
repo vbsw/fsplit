@@ -36,6 +36,24 @@ func (results *clResults) oneParamHasMultipleResults() bool {
 	return false
 }
 
+func (results *clResults) multipleCommands() bool {
+	var multiple bool
+
+	if len(results.parts) > 0 {
+		multiple = len(results.bytes) > 0 || len(results.lines) > 0 || len(results.concat) > 0
+
+	} else if len(results.bytes) > 0 {
+		multiple = len(results.parts) > 0 || len(results.lines) > 0 || len(results.concat) > 0
+
+	} else if len(results.lines) > 0 {
+		multiple = len(results.parts) > 0 || len(results.bytes) > 0 || len(results.concat) > 0
+
+	} else if len(results.concat) > 0 {
+		multiple = len(results.parts) > 0 || len(results.bytes) > 0 || len(results.lines) > 0
+	}
+	return multiple
+}
+
 func (results *clResults) toArray() [][]osargs.Param {
 	resultsList := make([][]osargs.Param, 9)
 	resultsList[0] = results.help

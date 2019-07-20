@@ -18,7 +18,7 @@ type fileSplitter struct {
 	inputFile   string
 	outputFile  string
 	bytesCopied int64
-	partCounter int
+	partCounter int64
 	err         error
 }
 
@@ -29,7 +29,7 @@ func newFileSplitter(inputFile, outputFile string) *fileSplitter {
 	return splitter
 }
 
-func (splitter *fileSplitter) splitFileIntoParts(parts int) {
+func (splitter *fileSplitter) splitFileIntoParts(parts int64) {
 	var in *os.File
 	splitter.bytesCopied = 0
 	splitter.partCounter = 1
@@ -39,6 +39,9 @@ func (splitter *fileSplitter) splitFileIntoParts(parts int) {
 	if splitter.err == nil {
 		defer in.Close()
 		inputSize := splitter.inputFileSize()
+		if parts > inputSize {
+			parts = inputSize
+		}
 		outputSize := splitter.outputFileSize(parts, inputSize)
 
 		for splitter.bytesCopied < inputSize && splitter.err == nil {
@@ -57,7 +60,7 @@ func (splitter *fileSplitter) splitFileBySize(outputSize int64) {
 	if splitter.err == nil {
 		defer in.Close()
 		inputSize := splitter.inputFileSize()
-		parts := splitter.outputParts(outputSize, inputSize)
+		parts := splitter.outputFileParts(outputSize, inputSize)
 
 		for splitter.bytesCopied < inputSize && splitter.err == nil {
 			splitter.copyFile(in, parts, outputSize)
@@ -65,9 +68,9 @@ func (splitter *fileSplitter) splitFileBySize(outputSize int64) {
 	}
 }
 
-func (splitter *fileSplitter) copyFile(in *os.File, parts int, fileSize int64) {
+func (splitter *fileSplitter) copyFile(in *os.File, parts int64, fileSize int64) {
 	var out *os.File
-	fileName := outputFileName(splitter.inputFile, parts, splitter.partCounter)
+	fileName := outputFileName(splitter.outputFile, parts, splitter.partCounter)
 	out, splitter.err = os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 666)
 
 	if splitter.err == nil {
@@ -90,25 +93,25 @@ func (splitter *fileSplitter) inputFileSize() int64 {
 	return inputSize
 }
 
-func (splitter *fileSplitter) outputFileSize(parts int, inputSize int64) int64 {
-	chunkSize := inputSize / int64(parts)
+func (splitter *fileSplitter) outputFileSize(parts int64, inputSize int64) int64 {
+	chunkSize := inputSize / parts
 	// remove rounding error
-	if chunkSize*int64(parts) < inputSize {
+	if chunkSize * parts < inputSize {
 		chunkSize++
 	}
 	return chunkSize
 }
 
-func (splitter *fileSplitter) outputParts(outputSize, inputSize int64) int {
+func (splitter *fileSplitter) outputFileParts(outputSize, inputSize int64) int64 {
 	parts := inputSize / outputSize
 	if parts*outputSize < inputSize {
 		parts++
 	}
-	return int(parts)
+	return parts
 }
 
-func outputFileName(fileNameOriginal string, parts, partNumber int) string {
-	partsStr := strconv.Itoa(parts)
+func outputFileName(fileNameOriginal string, parts, partNumber int64) string {
+	partsStr := strconv.Itoa(int(parts))
 	digits := len(partsStr)
 	digitsStr := strconv.Itoa(digits)
 	format := "%0" + digitsStr + "d"

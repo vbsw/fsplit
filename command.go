@@ -18,7 +18,7 @@ type cmdParser struct {
 	message    string
 	inputFile  string
 	outputFile string
-	parts      int
+	parts      int64
 	bytes      int64
 	lines      int64
 }
@@ -52,12 +52,10 @@ func (cmd *cmdParser) parseOSArgs() {
 		restArgs, results.output = parsePathWOFlag(osArgs, restArgs, results.output)
 
 		if len(restArgs) == 0 {
-			switch len(osArgs.Args) {
-			case 1:
+			if len(osArgs.Args) == 1 {
 				cmd.interpretOneArgument(results)
-			case 2:
-				cmd.interpretTwoArguments(results)
-			default:
+
+			} else {
 				cmd.interpretManyArguments(results)
 			}
 
@@ -114,19 +112,17 @@ func (cmd *cmdParser) interpretOneArgument(results *clResults) {
 	}
 }
 
-func (cmd *cmdParser) setWrongArgumentUsage() {
-	cmd.cmdType = wrong
-	cmd.message = "wrong argument usage"
-}
-
-func (cmd *cmdParser) interpretTwoArguments(results *clResults) {
+func (cmd *cmdParser) interpretManyArguments(results *clResults) {
 	if results.infoAvailable() {
 		cmd.setWrongArgumentUsage()
 
 	} else if results.oneParamHasMultipleResults() {
 		cmd.setWrongArgumentUsage()
 
-		/* split */
+	} else if results.multipleCommands() {
+		cmd.setWrongArgumentUsage()
+
+	/* split */
 	} else if len(results.concat) == 0 {
 		cmd.interpretInput(results)
 		cmd.interpretOutput(results)
@@ -139,16 +135,18 @@ func (cmd *cmdParser) interpretTwoArguments(results *clResults) {
 			if cmd.parts == 0 && cmd.bytes == 0 && cmd.lines == 0 {
 				cmd.parts = 2
 			}
-
-		} else {
-			cmd.setWrongArgumentUsage()
 		}
 
-		/* concatenate */
+	/* concatenate */
 	} else {
 		cmd.cmdType = info
 		cmd.message = "concatenation not supported, yet"
 	}
+}
+
+func (cmd *cmdParser) setWrongArgumentUsage() {
+	cmd.cmdType = wrong
+	cmd.message = "wrong argument usage"
 }
 
 func (cmd *cmdParser) interpretInput(results *clResults) {
@@ -177,18 +175,7 @@ func (cmd *cmdParser) interpretInput(results *clResults) {
 func (cmd *cmdParser) interpretOutput(results *clResults) {
 	if cmd.cmdType == none {
 		if len(results.output) > 0 {
-			param := results.output[0]
-			if fileExists(param.Value) {
-				cmd.outputFile = param.Value
-
-			} else if direcotryExists(param.Value) {
-				cmd.cmdType = wrong
-				cmd.message = "output is a directory, but must be a file"
-
-			} else {
-				cmd.cmdType = wrong
-				cmd.message = "output file does not exist"
-			}
+			cmd.outputFile = results.output[0].Value
 		} else {
 			cmd.outputFile = cmd.inputFile
 		}
@@ -200,7 +187,7 @@ func (cmd *cmdParser) interpretParts(results *clResults) {
 		if len(results.parts) > 0 {
 			parts, err := strconv.Atoi(results.parts[0].Value)
 			if err == nil {
-				cmd.parts = int(abs(int64(parts)))
+				cmd.parts = abs(int64(parts))
 			} else {
 				cmd.cmdType = wrong
 				cmd.message = "can't parse number of parts"
@@ -274,12 +261,6 @@ func parseBytes(bytesStr string) (int64, error) {
 		}
 	}
 	return bytes64, err
-}
-
-func (cmd *cmdParser) interpretManyArguments(results *clResults) {
-	// TODO
-	cmd.cmdType = info
-	cmd.message = "not supported, yet"
 }
 
 func parseFlaggedParameters(osArgs *osargs.OSArgs) *clResults {
