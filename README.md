@@ -14,15 +14,21 @@ fsplit is distributed in the hope that it will be useful, but WITHOUT ANY WARRAN
 
 ## Usage
 
-	fsplit [OPTIONS] [INPUT-FILE]
+	fsplit ( INFO | SPLIT-CONCATENATE )
 
-	OPTIONS
-		-i=FILE    input file
-		-o=FILE    output directory (for split) or file (for concatenate)
-		-p=N       number of chunks
-		-b=N[U]    size per chunk in bytes, U = unit (k/K, m/M or g/G)
-		-l=N       number of lines per chunk
-		-c         concatenate files (INPUT-FILE is only one file, the first one)
+	INFO
+		-h           print this help
+		-v           print version
+		--copyright  print copyright
+
+	SPLIT-CONCATENATE
+		fsplit [COMMAND] INPUT-FILE [OUTPUT-FILE/-DIRECTORY]
+
+	COMMAND
+		-p=N         split file into N chunks (parts)
+		-b=N[U]      split file into N bytes per chunk, U = unit (k/K, m/M or g/G)
+		-l=N         split file into N lines per chunk
+		-c           concatenate files (INPUT-FILE is only one file, the first one)
 
 ## References
 - https://golang.org/doc/install
