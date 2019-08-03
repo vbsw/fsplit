@@ -47,11 +47,11 @@ func (cmd *cmdParser) parseOSArgs() {
 
 	} else {
 		results := parseFlaggedParameters(osArgs)
-		restArgs := osArgs.Rest(results.toArray())
-		restArgs, results.input = parsePathWOFlag(osArgs, restArgs, results.input)
-		restArgs, results.output = parsePathWOFlag(osArgs, restArgs, results.output)
+		restParams := osArgs.Rest(results.toArray())
+		restParams, results.input = parsePathWOFlag(osArgs, restParams, results.input)
+		restParams, results.output = parsePathWOFlag(osArgs, restParams, results.output)
 
-		if len(restArgs) == 0 {
+		if len(restParams) == 0 {
 			if len(osArgs.Args) == 1 {
 				cmd.interpretOneArgument(results)
 
@@ -61,7 +61,7 @@ func (cmd *cmdParser) parseOSArgs() {
 
 		} else {
 			cmd.cmdType = wrong
-			cmd.message = "unknown argument \"" + restArgs[0].Value + "\""
+			cmd.message = "unknown argument \"" + restParams[0].Value + "\""
 		}
 	}
 }
@@ -122,7 +122,7 @@ func (cmd *cmdParser) interpretManyArguments(results *clResults) {
 	} else if results.multipleCommands() {
 		cmd.setWrongArgumentUsage()
 
-	/* split */
+		/* split */
 	} else if len(results.concat) == 0 {
 		cmd.interpretInput(results)
 		cmd.interpretOutput(results)
@@ -137,10 +137,17 @@ func (cmd *cmdParser) interpretManyArguments(results *clResults) {
 			}
 		}
 
-	/* concatenate */
+		/* concatenate */
 	} else {
-		cmd.cmdType = info
-		cmd.message = "concatenation not supported, yet"
+		cmd.interpretInput(results)
+		cmd.interpretOutput(results)
+		cmd.interpretParts(results)
+		cmd.interpretBytes(results)
+		cmd.interpretLines(results)
+
+		if cmd.cmdType == none {
+			cmd.cmdType = concatenate
+		}
 	}
 }
 
@@ -267,6 +274,7 @@ func parseFlaggedParameters(osArgs *osargs.OSArgs) *clResults {
 	results := new(clResults)
 	ioOp := osargs.NewAsgOp("", "=")
 	cmdOp := osargs.NewAsgOp(" ", "", "=")
+	cmdConcatOp := osargs.NewAsgOp("", "=")
 
 	results.help = osArgs.Parse("-h", "--help", "-help", "help")
 	results.version = osArgs.Parse("-v", "--version", "-version", "version")
@@ -276,22 +284,22 @@ func parseFlaggedParameters(osArgs *osargs.OSArgs) *clResults {
 	results.parts = osArgs.ParsePairs(cmdOp, "-p", "--parts", "-parts", "parts")
 	results.bytes = osArgs.ParsePairs(cmdOp, "-b", "--bytes", "-bytes", "bytes")
 	results.lines = osArgs.ParsePairs(cmdOp, "-l", "--lines", "-lines", "lines")
-	results.concat = osArgs.ParsePairs(cmdOp, "-c", "--concat", "-concat", "concat")
+	results.concat = osArgs.ParsePairs(cmdConcatOp, "-c", "--concat", "-concat", "concat")
 
 	return results
 }
 
-func parsePathWOFlag(osArgs *osargs.OSArgs, restArgs, results []osargs.Param) ([]osargs.Param, []osargs.Param) {
+func parsePathWOFlag(osArgs *osargs.OSArgs, restParams, results []osargs.Param) ([]osargs.Param, []osargs.Param) {
 	if len(results) == 0 {
-		for i, restArg := range restArgs {
+		for i, restArg := range restParams {
 			if stringPathLike(restArg.Value) {
-				restArgs = removeResult(restArgs, i)
+				restParams = removeResult(restParams, i)
 				results = append(results, osargs.Param{"", restArg.Value, "", restArg.Index})
 				break
 			}
 		}
 	}
-	return restArgs, results
+	return restParams, results
 }
 
 func removeResult(results []osargs.Param, index int) []osargs.Param {

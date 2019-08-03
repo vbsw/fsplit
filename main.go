@@ -53,7 +53,6 @@ func splitFile(cmd *cmdParser) {
 		cmd.message = "split by lines is not supported, yet"
 		printInfo(cmd)
 	}
-
 	if splitter.err != nil {
 		cmd.message = splitter.err.Error()
 		printError(cmd)
@@ -61,7 +60,13 @@ func splitFile(cmd *cmdParser) {
 }
 
 func concatenateFiles(cmd *cmdParser) {
-	fmt.Println("concatenation not implemented")
+	concatenator := newFileConcatenator(cmd.inputFile, cmd.outputFile)
+	concatenator.concatenateFiles()
+
+	if concatenator.err != nil {
+		cmd.message = concatenator.err.Error()
+		printError(cmd)
+	}
 }
 
 func printError(cmd *cmdParser) {
