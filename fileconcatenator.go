@@ -28,7 +28,7 @@ func newFileConcatenator(inputFile, outputFile string) *fileConcatenator {
 }
 
 func (concatenator *fileConcatenator) concatenateFiles() {
-	nameGenerator := newFileNameGenerator2(concatenator.inputFile)
+	nameGenerator := newFileNameGeneratorForConcat(concatenator.inputFile)
 	inputFile := nameGenerator.nextFileName()
 	outputFile := concatenator.finalOutputFile(nameGenerator.fileName)
 

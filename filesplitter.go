@@ -38,10 +38,11 @@ func (splitter *fileSplitter) splitFileIntoParts(parts int64) {
 			parts = inputSize
 		}
 		outputSize := splitter.outputFileSize(parts, inputSize)
-		nameGenerator := newFileNameGenerator(splitter.outputFile, parts)
+		nameGenerator := newFileNameGeneratorForSplit(splitter.outputFile, parts)
 
 		for splitter.bytesCopied < inputSize && splitter.err == nil {
-			splitter.copyFile(in, outputSize, nameGenerator)
+			outputFileName := nameGenerator.nextFileName()
+			splitter.copyFile(in, outputFileName, outputSize)
 		}
 	}
 }
@@ -55,24 +56,43 @@ func (splitter *fileSplitter) splitFileBySize(outputSize int64) {
 		defer in.Close()
 		inputSize := splitter.inputFileSize()
 		parts := splitter.outputFileParts(outputSize, inputSize)
-		nameGenerator := newFileNameGenerator(splitter.outputFile, parts)
+		nameGenerator := newFileNameGeneratorForSplit(splitter.outputFile, parts)
 
 		for splitter.bytesCopied < inputSize && splitter.err == nil {
-			splitter.copyFile(in, outputSize, nameGenerator)
+			outputFileName := nameGenerator.nextFileName()
+			splitter.copyFile(in, outputFileName, outputSize)
 		}
 	}
 }
 
-func (splitter *fileSplitter) copyFile(in *os.File, fileSize int64, nameGenerator *fileNameGenerator) {
+func (splitter *fileSplitter) splitFileByLines(lines int64) {
+	inputSizes := splitter.inputSizesByLines(lines)
+
+	if len(inputSizes) > 0 {
+		var in *os.File
+		in, splitter.err = os.Open(splitter.inputFile)
+
+		if splitter.err == nil {
+			defer in.Close()
+			nameGenerator := newFileNameGeneratorForSplit(splitter.outputFile, int64(len(inputSizes)))
+
+			for _, outputSize := range inputSizes {
+				outputFileName := nameGenerator.nextFileName()
+				splitter.copyFile(in, outputFileName, outputSize)
+			}
+		}
+	}
+}
+
+func (splitter *fileSplitter) copyFile(in *os.File, destFileName string, copySize int64) {
 	var out *os.File
-	fileName := nameGenerator.nextFileName()
-	out, splitter.err = os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 666)
+	out, splitter.err = os.OpenFile(destFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 666)
 
 	if splitter.err == nil {
 		var written int64
 		defer out.Close()
 
-		written, splitter.err = io.CopyN(out, in, fileSize)
+		written, splitter.err = io.CopyN(out, in, copySize)
 		splitter.bytesCopied += written
 
 		if splitter.err == io.EOF {
@@ -102,4 +122,48 @@ func (splitter *fileSplitter) outputFileParts(outputSize, inputSize int64) int64
 		parts++
 	}
 	return parts
+}
+
+func (splitter *fileSplitter) inputSizesByLines(lines int64) []int64 {
+	var in *os.File
+	var sizes []int64
+
+	in, splitter.err = os.Open(splitter.inputFile)
+
+	if splitter.err == nil {
+		var linesRead int64
+		var size int64
+		var prevByte byte
+		defer in.Close()
+		sizes = make([]int64, 0, 1024)
+		buffer := make([]byte, 1024*1024*8)
+		bytesRead, _ := in.Read(buffer)
+
+		for bytesRead > 0 {
+			for i := 0; i < bytesRead; i++ {
+				currByte := buffer[i]
+				size++
+
+				if currByte == '\n' || prevByte == '\r' {
+					linesRead++
+				}
+				if linesRead == lines {
+					if currByte == '\n' {
+						sizes = append(sizes, size)
+						size = 0
+					} else {
+						sizes = append(sizes, size-1)
+						size = 1
+					}
+					linesRead = 0
+				}
+				prevByte = currByte
+			}
+			bytesRead, _ = in.Read(buffer)
+		}
+		if size > 0 {
+			sizes = append(sizes, size)
+		}
+	}
+	return sizes
 }

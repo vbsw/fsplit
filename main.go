@@ -50,8 +50,7 @@ func splitFile(cmd *cmdParser) {
 		splitter.splitFileBySize(cmd.bytes)
 
 	} else if cmd.lines > 0 {
-		cmd.message = "split by lines is not supported, yet"
-		printInfo(cmd)
+		splitter.splitFileByLines(cmd.lines)
 	}
 	if splitter.err != nil {
 		cmd.message = splitter.err.Error()

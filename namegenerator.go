@@ -18,16 +18,14 @@ type fileNameGenerator struct {
 	counter      int64
 }
 
-// newFileNameGenerator for splitting
-func newFileNameGenerator(fileName string, parts int64) *fileNameGenerator {
+func newFileNameGeneratorForSplit(fileName string, parts int64) *fileNameGenerator {
 	nameGenerator := new(fileNameGenerator)
 	nameGenerator.fileName = fileName
 	nameGenerator.suffixFormat = suffixFormat(len(strconv.Itoa(int(parts))))
 	return nameGenerator
 }
 
-// newFileNameGenerator2 for concatenation
-func newFileNameGenerator2(fileName string) *fileNameGenerator {
+func newFileNameGeneratorForConcat(fileName string) *fileNameGenerator {
 	nameGenerator := new(fileNameGenerator)
 	fileNameWOSuffix, suffixLength := analizeFileName(fileName)
 	nameGenerator.fileName = fileNameWOSuffix
