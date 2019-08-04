@@ -99,7 +99,7 @@ func (cmd *cmdParser) interpretOneArgument(results *clResults) {
 		cmd.message = cmd.message + "distributed under the Boost Software License, version 1.0"
 
 	} else {
-		cmd.interpretInput(results)
+		cmd.interpretInputForSplit(results)
 		cmd.interpretOutput(results)
 
 		if cmd.cmdType == none {
@@ -122,9 +122,9 @@ func (cmd *cmdParser) interpretManyArguments(results *clResults) {
 	} else if results.multipleCommands() {
 		cmd.setWrongArgumentUsage()
 
-		/* split */
 	} else if len(results.concat) == 0 {
-		cmd.interpretInput(results)
+		/* split */
+		cmd.interpretInputForSplit(results)
 		cmd.interpretOutput(results)
 		cmd.interpretParts(results)
 		cmd.interpretBytes(results)
@@ -137,9 +137,9 @@ func (cmd *cmdParser) interpretManyArguments(results *clResults) {
 			}
 		}
 
-		/* concatenate */
 	} else {
-		cmd.interpretInput(results)
+		/* concatenate */
+		cmd.interpretInputForConcat(results)
 		cmd.interpretOutput(results)
 		cmd.interpretParts(results)
 		cmd.interpretBytes(results)
@@ -156,10 +156,11 @@ func (cmd *cmdParser) setWrongArgumentUsage() {
 	cmd.message = "wrong argument usage"
 }
 
-func (cmd *cmdParser) interpretInput(results *clResults) {
+func (cmd *cmdParser) interpretInputForSplit(results *clResults) {
 	if cmd.cmdType == none {
 		if len(results.input) > 0 {
 			param := results.input[0]
+
 			if fileExists(param.Value) {
 				cmd.inputFile = param.Value
 
@@ -170,6 +171,26 @@ func (cmd *cmdParser) interpretInput(results *clResults) {
 			} else {
 				cmd.cmdType = wrong
 				cmd.message = "input file does not exist"
+			}
+
+		} else {
+			cmd.cmdType = wrong
+			cmd.message = "input file is not specified"
+		}
+	}
+}
+
+func (cmd *cmdParser) interpretInputForConcat(results *clResults) {
+	if cmd.cmdType == none {
+		if len(results.input) > 0 {
+			param := results.input[0]
+
+			if direcotryExists(param.Value) {
+				cmd.cmdType = wrong
+				cmd.message = "input is a directory, but must be a file"
+
+			} else {
+				cmd.inputFile = param.Value
 			}
 
 		} else {
@@ -274,7 +295,6 @@ func parseFlaggedParameters(osArgs *osargs.OSArgs) *clResults {
 	results := new(clResults)
 	ioOp := osargs.NewAsgOp("", "=")
 	cmdOp := osargs.NewAsgOp(" ", "", "=")
-	cmdConcatOp := osargs.NewAsgOp("", "=")
 
 	results.help = osArgs.Parse("-h", "--help", "-help", "help")
 	results.version = osArgs.Parse("-v", "--version", "-version", "version")
@@ -284,7 +304,7 @@ func parseFlaggedParameters(osArgs *osargs.OSArgs) *clResults {
 	results.parts = osArgs.ParsePairs(cmdOp, "-p", "--parts", "-parts", "parts")
 	results.bytes = osArgs.ParsePairs(cmdOp, "-b", "--bytes", "-bytes", "bytes")
 	results.lines = osArgs.ParsePairs(cmdOp, "-l", "--lines", "-lines", "lines")
-	results.concat = osArgs.ParsePairs(cmdConcatOp, "-c", "--concat", "-concat", "concat")
+	results.concat = osArgs.Parse("-c", "--concat", "-concat", "concat")
 
 	return results
 }

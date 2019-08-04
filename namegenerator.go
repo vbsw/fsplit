@@ -18,41 +18,20 @@ type fileNameGenerator struct {
 	counter      int64
 }
 
+// newFileNameGenerator for splitting
 func newFileNameGenerator(fileName string, parts int64) *fileNameGenerator {
 	nameGenerator := new(fileNameGenerator)
-	partsStr := strconv.Itoa(int(parts))
-	digits := len(partsStr)
-	digitsStr := strconv.Itoa(digits)
 	nameGenerator.fileName = fileName
-	nameGenerator.suffixFormat = "%0" + digitsStr + "d"
+	nameGenerator.suffixFormat = suffixFormat(len(strconv.Itoa(int(parts))))
 	return nameGenerator
 }
 
-func newFileNameGenerator2(originalFileName string) *fileNameGenerator {
-	var nameGenerator *fileNameGenerator
-	dotIndex := rDotIndex(originalFileName)
-	fileName := originalFileName
-	startCounter := int64(0)
-	parts := int64(0)
-
-	if dotIndex >= 0 {
-		suffix := originalFileName[dotIndex+1:]
-		part, err := strconv.Atoi(suffix)
-		if err == nil && part >= 0 {
-			fileName = originalFileName[:dotIndex]
-			startCounter = int64(part - 1)
-			for i := 0; i < len(suffix); i++ {
-				parts = parts*10 + 9
-			}
-		}
-	}
-	if parts == 0 {
-		/* TODO: analyze available files */
-		parts = 9
-	}
-	nameGenerator = newFileNameGenerator(fileName, parts)
-	nameGenerator.counter = startCounter
-
+// newFileNameGenerator2 for concatenation
+func newFileNameGenerator2(fileName string) *fileNameGenerator {
+	nameGenerator := new(fileNameGenerator)
+	fileNameWOSuffix, suffixLength := analizeFileName(fileName)
+	nameGenerator.fileName = fileNameWOSuffix
+	nameGenerator.suffixFormat = suffixFormat(suffixLength)
 	return nameGenerator
 }
 
@@ -61,4 +40,38 @@ func (nameGenerator *fileNameGenerator) nextFileName() string {
 	partStr := fmt.Sprintf(nameGenerator.suffixFormat, nameGenerator.counter)
 	fileNamePart := nameGenerator.fileName + "." + partStr
 	return fileNamePart
+}
+
+func suffixFormat(numDigits int) string {
+	numDigitsStr := strconv.Itoa(numDigits)
+	format := "%0" + numDigitsStr + "d"
+	return format
+}
+
+func analizeFileName(fileName string) (string, int) {
+	fileNameWOSuffix := fileName
+	suffixLength := 0
+	dotIndex := rDotIndex(fileName)
+
+	if dotIndex >= 0 {
+		suffix := fileName[dotIndex+1:]
+		part, err := strconv.Atoi(suffix)
+
+		if err == nil && part >= 0 {
+			fileNameWOSuffix = fileName[:dotIndex]
+			suffixLength = len(suffix)
+		}
+	}
+	/* guess existence of other suitable file */
+	if suffixLength == 0 {
+		fileNameWDot := fileName + "."
+		for i := 1; i < 11; i++ {
+			suffix := fmt.Sprintf(suffixFormat(i), 1)
+			if fileExists(fileNameWDot + suffix) {
+				suffixLength = i
+				break
+			}
+		}
+	}
+	return fileNameWOSuffix, suffixLength
 }
