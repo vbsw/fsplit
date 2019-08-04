@@ -84,7 +84,7 @@ func (cmd *cmdParser) interpretOneArgument(results *clResults) {
 		cmd.message = cmd.message + "SPLIT-CONCATENATE\n"
 		cmd.message = cmd.message + "  fsplit [COMMAND] INPUT-FILE [OUTPUT-FILE]\n\n"
 		cmd.message = cmd.message + "COMMAND\n"
-		cmd.message = cmd.message + "  -p=N         split file into N chunks (parts)\n"
+		cmd.message = cmd.message + "  -p=N         split file into N parts (chunks)\n"
 		cmd.message = cmd.message + "  -b=N[U]      split file into N bytes per chunk, U = unit (k/K, m/M or g/G)\n"
 		cmd.message = cmd.message + "  -l=N         split file into N lines per chunk\n"
 		cmd.message = cmd.message + "  -c           concatenate files (INPUT-FILE is only one file, the first one)"
@@ -95,8 +95,8 @@ func (cmd *cmdParser) interpretOneArgument(results *clResults) {
 
 	} else if len(results.copyright) > 0 {
 		cmd.cmdType = info
-		cmd.message = "copyright 2019 Vitali Baumtrok (vbsw@mailbox.org)\n"
-		cmd.message = cmd.message + "distributed under the Boost Software License, version 1.0"
+		cmd.message = "Copyright 2019, Vitali Baumtrok (vbsw@mailbox.org).\n"
+		cmd.message = cmd.message + "Distributed under the Boost Software License, version 1.0."
 
 	} else {
 		cmd.interpretInputForSplit(results)
