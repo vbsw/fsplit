@@ -106,7 +106,7 @@ func (cmd *cmdParser) interpretOneArgument(results *clResults) {
 			cmd.cmdType = split
 			cmd.parts = 2
 
-		} else {
+		} else if cmd.cmdType != wrong {
 			cmd.setWrongArgumentUsage()
 		}
 	}
