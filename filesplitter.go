@@ -86,7 +86,7 @@ func (splitter *fileSplitter) splitFileByLines(lines int64) {
 
 func (splitter *fileSplitter) copyFile(in *os.File, destFileName string, copySize int64) {
 	var out *os.File
-	out, splitter.err = os.OpenFile(destFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 666)
+	out, splitter.err = os.OpenFile(destFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 
 	if splitter.err == nil {
 		var written int64

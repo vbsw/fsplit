@@ -48,8 +48,8 @@ func (cmd *cmdParser) parseOSArgs() {
 	} else {
 		results := parseFlaggedParameters(osArgs)
 		restParams := osArgs.Rest(results.toArray())
-		restParams, results.input = parsePathWOFlag(osArgs, restParams, results.input)
-		restParams, results.output = parsePathWOFlag(osArgs, restParams, results.output)
+		restParams, results.input = parseInputPath(osArgs, restParams, results.input)
+		restParams, results.output = parseOutputPath(osArgs, restParams, results.output)
 
 		if len(restParams) == 0 {
 			if len(osArgs.Args) == 1 {
@@ -309,15 +309,24 @@ func parseFlaggedParameters(osArgs *osargs.OSArgs) *clResults {
 	return results
 }
 
-func parsePathWOFlag(osArgs *osargs.OSArgs, restParams, results []osargs.Param) ([]osargs.Param, []osargs.Param) {
+func parseInputPath(osArgs *osargs.OSArgs, restParams, results []osargs.Param) ([]osargs.Param, []osargs.Param) {
 	if len(results) == 0 {
 		for i, restArg := range restParams {
-			if stringPathLike(restArg.Value) {
+			if stringPathLike(restArg.Value) || fileExists("./" + restArg.Value) {
 				restParams = removeResult(restParams, i)
 				results = append(results, osargs.Param{"", restArg.Value, "", restArg.Index})
 				break
 			}
 		}
+	}
+	return restParams, results
+}
+
+func parseOutputPath(osArgs *osargs.OSArgs, restParams, results []osargs.Param) ([]osargs.Param, []osargs.Param) {
+	if len(results) == 0 && len(restParams) > 0 {
+		restArg := restParams[0]
+		restParams = removeResult(restParams, 0)
+		results = append(results, osargs.Param{"", restArg.Value, "", restArg.Index})
 	}
 	return restParams, results
 }

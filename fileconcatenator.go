@@ -36,7 +36,7 @@ func (concatenator *fileConcatenator) concatenateFiles() {
 		in, inErr := os.Open(inputFile)
 
 		if inErr == nil {
-			out, outErr := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 666)
+			out, outErr := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 
 			if outErr == nil {
 				for inErr == nil && concatenator.err == nil {
