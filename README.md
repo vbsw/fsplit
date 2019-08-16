@@ -3,7 +3,7 @@
 [![GoDoc](https://godoc.org/github.com/vbsw/fsplit?status.svg)](https://godoc.org/github.com/vbsw/fsplit) [![Go Report Card](https://goreportcard.com/badge/github.com/vbsw/fsplit)](https://goreportcard.com/report/github.com/vbsw/fsplit) [![Stability: Experimental](https://masterminds.github.io/stability/experimental.svg)](https://masterminds.github.io/stability/experimental.html)
 
 ## About
-fsplit splits one file into many or combines them back to one. fsplit is published on <https://github.com/vbsw/fsplit>.
+fsplit splits one file into many or combines them back to one. fsplit is published on <https://github.com/vbsw/fsplit> and <https://gitlab.com/vbsw/fsplit>.
 
 ## Copyright
 Copyright 2019, Vitali Baumtrok (vbsw@mailbox.org).
