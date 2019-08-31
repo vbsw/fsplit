@@ -82,7 +82,7 @@ func (cmd *cmdParser) interpretOneArgument(results *clResults) {
 		cmd.message = cmd.message + "  -v           print version\n"
 		cmd.message = cmd.message + "  --copyright  print copyright\n\n"
 		cmd.message = cmd.message + "SPLIT-CONCATENATE\n"
-		cmd.message = cmd.message + "  fsplit [COMMAND] INPUT-FILE [OUTPUT-FILE]\n\n"
+		cmd.message = cmd.message + "  [COMMAND] INPUT-FILE [OUTPUT-FILE]\n\n"
 		cmd.message = cmd.message + "COMMAND\n"
 		cmd.message = cmd.message + "  -p=N         split file into N parts (chunks)\n"
 		cmd.message = cmd.message + "  -b=N[U]      split file into N bytes per chunk, U = unit (k/K, m/M or g/G)\n"

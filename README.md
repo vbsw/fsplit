@@ -22,7 +22,7 @@ fsplit is distributed in the hope that it will be useful, but WITHOUT ANY WARRAN
 		--copyright  print copyright
 
 	SPLIT-CONCATENATE
-		fsplit [COMMAND] INPUT-FILE [OUTPUT-FILE]
+		[COMMAND] INPUT-FILE [OUTPUT-FILE]
 
 	COMMAND
 		-p=N         split file into N parts (chunks)
