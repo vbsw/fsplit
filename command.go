@@ -232,7 +232,7 @@ func (cmd *cmdParser) interpretBytes(results *clResults) {
 				cmd.bytes = abs(bytes)
 			} else {
 				cmd.cmdType = wrong
-				cmd.message = "can't parse number of parts"
+				cmd.message = "can't parse number of bytes"
 			}
 		}
 	}
