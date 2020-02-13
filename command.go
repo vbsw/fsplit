@@ -1,5 +1,5 @@
 /*
- *          Copyright 2019, Vitali Baumtrok.
+ *       Copyright 2019, 2020, Vitali Baumtrok.
  * Distributed under the Boost Software License, Version 1.0.
  *     (See accompanying file LICENSE or copy at
  *        http://www.boost.org/LICENSE_1_0.txt)
@@ -8,13 +8,11 @@
 package main
 
 import (
-	"github.com/vbsw/osargs"
-	"os"
 	"strconv"
 )
 
-type cmdParser struct {
-	cmdType    command
+type command struct {
+	id         commandID
 	message    string
 	inputFile  string
 	outputFile string
@@ -23,170 +21,121 @@ type cmdParser struct {
 	lines      int64
 }
 
-type command int
+type commandID int
 
 const (
-	none        command = 0
-	info        command = 1
-	split       command = 2
-	concatenate command = 3
-	wrong       command = 4
+	none   commandID = 0
+	info   commandID = 1
+	split  commandID = 2
+	concat commandID = 3
+	wrong  commandID = 4
 )
 
-func newCmdParser() *cmdParser {
-	cmd := new(cmdParser)
-	cmd.cmdType = none
+func commandFromCommandLine() *command {
+	cmd := new(command)
+	params, err := parametersFromOSArgs()
+
+	if err == nil {
+
+		if params == nil {
+			cmd.setShortInfo()
+
+		} else if params.incompatibleArguments() {
+			cmd.setWrongArgumentUsage()
+
+		} else if params.oneParamHasMultipleResults() {
+			cmd.setWrongArgumentUsage()
+
+		} else {
+			cmd.setValidCommand(params)
+		}
+	} else {
+		cmd.id = wrong
+		cmd.message = err.Error()
+	}
 	return cmd
 }
 
-func (cmd *cmdParser) parseOSArgs() {
-	osArgs := osargs.New()
-
-	if len(osArgs.Args) == 0 {
-		cmd.interpretZeroArguments()
-
-	} else {
-		results := parseFlaggedParameters(osArgs)
-		restParams := osArgs.Rest(results.toArray())
-		restParams, results.input = parseInputPath(osArgs, restParams, results.input)
-		restParams, results.output = parseOutputPath(osArgs, restParams, results.output)
-
-		if len(restParams) == 0 {
-			if len(osArgs.Args) == 1 {
-				cmd.interpretOneArgument(results)
-
-			} else {
-				cmd.interpretManyArguments(results)
-			}
-
-		} else {
-			cmd.cmdType = wrong
-			cmd.message = "unknown argument \"" + restParams[0].Value + "\""
-		}
-	}
-}
-
-func (cmd *cmdParser) interpretZeroArguments() {
-	cmd.cmdType = info
+func (cmd *command) setShortInfo() {
+	cmd.id = info
 	cmd.message = "Run 'fsplit --help' for usage."
 }
 
-func (cmd *cmdParser) interpretOneArgument(results *clResults) {
-	if len(results.help) > 0 {
-		cmd.cmdType = info
-		cmd.message = "fsplit splits files into many, or combines them back to one\n\n"
-		cmd.message = cmd.message + "USAGE\n"
-		cmd.message = cmd.message + "  fsplit ( INFO | SPLIT-CONCATENATE )\n\n"
-		cmd.message = cmd.message + "INFO\n"
-		cmd.message = cmd.message + "  -h           print this help\n"
-		cmd.message = cmd.message + "  -v           print version\n"
-		cmd.message = cmd.message + "  --copyright  print copyright\n\n"
-		cmd.message = cmd.message + "SPLIT-CONCATENATE\n"
-		cmd.message = cmd.message + "  [COMMAND] INPUT-FILE [OUTPUT-FILE]\n\n"
-		cmd.message = cmd.message + "COMMAND\n"
-		cmd.message = cmd.message + "  -p=N         split file into N parts (chunks)\n"
-		cmd.message = cmd.message + "  -b=N[U]      split file into N bytes per chunk, U = unit (k/K, m/M or g/G)\n"
-		cmd.message = cmd.message + "  -l=N         split file into N lines per chunk\n"
-		cmd.message = cmd.message + "  -c           concatenate files (INPUT-FILE is only one file, the first one)"
-
-	} else if len(results.version) > 0 {
-		cmd.cmdType = info
-		cmd.message = version.String()
-
-	} else if len(results.copyright) > 0 {
-		cmd.cmdType = info
-		cmd.message = "Copyright 2019, Vitali Baumtrok (vbsw@mailbox.org).\n"
-		cmd.message = cmd.message + "Distributed under the Boost Software License, version 1.0."
-
-	} else {
-		cmd.interpretInputForSplit(results)
-		cmd.interpretOutput(results)
-
-		if cmd.cmdType == none {
-			cmd.cmdType = split
-			cmd.parts = 2
-
-		} else if cmd.cmdType != wrong {
-			cmd.setWrongArgumentUsage()
-		}
-	}
-}
-
-func (cmd *cmdParser) interpretManyArguments(results *clResults) {
-	if results.infoAvailable() {
-		cmd.setWrongArgumentUsage()
-
-	} else if results.oneParamHasMultipleResults() {
-		cmd.setWrongArgumentUsage()
-
-	} else if results.multipleCommands() {
-		cmd.setWrongArgumentUsage()
-
-	} else if len(results.concat) == 0 {
-		/* split */
-		cmd.interpretInputForSplit(results)
-		cmd.interpretOutput(results)
-		cmd.interpretParts(results)
-		cmd.interpretBytes(results)
-		cmd.interpretLines(results)
-
-		if cmd.cmdType == none {
-			cmd.cmdType = split
-			if cmd.parts == 0 && cmd.bytes == 0 && cmd.lines == 0 {
-				cmd.parts = 2
-			}
-		}
-
-	} else {
-		/* concatenate */
-		cmd.interpretInputForConcat(results)
-		cmd.interpretOutput(results)
-		cmd.interpretParts(results)
-		cmd.interpretBytes(results)
-		cmd.interpretLines(results)
-
-		if cmd.cmdType == none {
-			cmd.cmdType = concatenate
-		}
-	}
-}
-
-func (cmd *cmdParser) setWrongArgumentUsage() {
-	cmd.cmdType = wrong
+func (cmd *command) setWrongArgumentUsage() {
+	cmd.id = wrong
 	cmd.message = "wrong argument usage"
 }
 
-func (cmd *cmdParser) interpretInputForSplit(results *clResults) {
-	if cmd.cmdType == none {
-		if len(results.input) > 0 {
-			param := results.input[0]
+func (cmd *command) setValidCommand(params *parameters) {
+	if len(params.help) > 0 {
+		cmd.setHelp()
 
-			if fileExists(param.Value) {
-				cmd.inputFile = param.Value
+	} else if len(params.version) > 0 {
+		cmd.setVersion()
 
-			} else if direcotryExists(param.Value) {
-				cmd.cmdType = wrong
-				cmd.message = "input is a directory, but must be a file"
+	} else if len(params.copyright) > 0 {
+		cmd.setCopyright()
 
-			} else {
-				cmd.cmdType = wrong
-				cmd.message = "input file does not exist"
-			}
+	} else if len(params.concat) > 0 {
+		cmd.interpretInputForConcat(params)
+		cmd.interpretOutput(params)
+		cmd.interpretParts(params)
+		cmd.interpretBytes(params)
+		cmd.interpretLines(params)
 
-		} else {
-			cmd.cmdType = wrong
-			cmd.message = "input file is not specified"
+		if cmd.id == none {
+			cmd.id = concat
+		}
+	} else {
+		cmd.interpretInputForSplit(params)
+		cmd.interpretOutput(params)
+		cmd.interpretParts(params)
+		cmd.interpretBytes(params)
+		cmd.interpretLines(params)
+		cmd.interpretDefaultSplitParts()
+
+		if cmd.id == none {
+			cmd.id = split
 		}
 	}
 }
 
-func (cmd *cmdParser) interpretInputForConcat(results *clResults) {
-	if cmd.cmdType == none {
-		if len(results.input) > 0 {
-			param := results.input[0]
+func (cmd *command) setHelp() {
+	cmd.id = info
+	cmd.message = "fsplit splits files into many, or combines them back to one\n\n"
+	cmd.message = cmd.message + "USAGE\n"
+	cmd.message = cmd.message + "  fsplit ( INFO | SPLIT-CONCATENATE )\n\n"
+	cmd.message = cmd.message + "INFO\n"
+	cmd.message = cmd.message + "  -h           print this help\n"
+	cmd.message = cmd.message + "  -v           print version\n"
+	cmd.message = cmd.message + "  --copyright  print copyright\n\n"
+	cmd.message = cmd.message + "SPLIT-CONCATENATE\n"
+	cmd.message = cmd.message + "  [COMMAND] INPUT-FILE [OUTPUT-FILE]\n\n"
+	cmd.message = cmd.message + "COMMAND\n"
+	cmd.message = cmd.message + "  -p=N         split file into N parts (chunks)\n"
+	cmd.message = cmd.message + "  -b=N[U]      split file into N bytes per chunk, U = unit (k/K, m/M or g/G)\n"
+	cmd.message = cmd.message + "  -l=N         split file into N lines per chunk\n"
+	cmd.message = cmd.message + "  -c           concatenate files (INPUT-FILE is only one file, the first one)"
+}
+
+func (cmd *command) setVersion() {
+	cmd.id = info
+	cmd.message = "0.1.0"
+}
+
+func (cmd *command) setCopyright() {
+	cmd.id = info
+	cmd.message = "Copyright 2019, 2020 Vitali Baumtrok (vbsw@mailbox.org).\n"
+	cmd.message = cmd.message + "Distributed under the Boost Software License, Version 1.0."
+}
+
+func (cmd *command) interpretInputForConcat(params *parameters) {
+	if cmd.id == none {
+		if len(params.input) > 0 {
+			param := params.input[0]
 
 			if direcotryExists(param.Value) {
-				cmd.cmdType = wrong
+				cmd.id = wrong
 				cmd.message = "input is a directory, but must be a file"
 
 			} else {
@@ -194,61 +143,91 @@ func (cmd *cmdParser) interpretInputForConcat(results *clResults) {
 			}
 
 		} else {
-			cmd.cmdType = wrong
+			cmd.id = wrong
 			cmd.message = "input file is not specified"
 		}
 	}
 }
 
-func (cmd *cmdParser) interpretOutput(results *clResults) {
-	if cmd.cmdType == none {
-		if len(results.output) > 0 {
-			cmd.outputFile = results.output[0].Value
+func (cmd *command) interpretOutput(params *parameters) {
+	if cmd.id == none {
+		if len(params.output) > 0 {
+			cmd.outputFile = params.output[0].Value
 		} else {
 			cmd.outputFile = cmd.inputFile
 		}
 	}
 }
 
-func (cmd *cmdParser) interpretParts(results *clResults) {
-	if cmd.cmdType == none {
-		if len(results.parts) > 0 {
-			parts, err := strconv.Atoi(results.parts[0].Value)
+func (cmd *command) interpretParts(params *parameters) {
+	if cmd.id == none {
+		if len(params.parts) > 0 {
+			parts, err := strconv.Atoi(params.parts[0].Value)
 			if err == nil {
 				cmd.parts = abs(int64(parts))
 			} else {
-				cmd.cmdType = wrong
+				cmd.id = wrong
 				cmd.message = "can't parse number of parts"
 			}
 		}
 	}
 }
 
-func (cmd *cmdParser) interpretBytes(results *clResults) {
-	if cmd.cmdType == none {
-		if len(results.bytes) > 0 {
-			bytes, err := parseBytes(results.bytes[0].Value)
+func (cmd *command) interpretBytes(params *parameters) {
+	if cmd.id == none {
+		if len(params.bytes) > 0 {
+			bytes, err := parseBytes(params.bytes[0].Value)
 			if err == nil {
 				cmd.bytes = abs(bytes)
 			} else {
-				cmd.cmdType = wrong
+				cmd.id = wrong
 				cmd.message = "can't parse number of bytes"
 			}
 		}
 	}
 }
 
-func (cmd *cmdParser) interpretLines(results *clResults) {
-	if cmd.cmdType == none {
-		if len(results.lines) > 0 {
-			lines, err := strconv.Atoi(results.lines[0].Value)
+func (cmd *command) interpretLines(params *parameters) {
+	if cmd.id == none {
+		if len(params.lines) > 0 {
+			lines, err := strconv.Atoi(params.lines[0].Value)
 			if err == nil {
 				cmd.lines = abs(int64(lines))
 			} else {
-				cmd.cmdType = wrong
+				cmd.id = wrong
 				cmd.message = "can't parse number of lines"
 			}
 		}
+	}
+}
+
+func (cmd *command) interpretInputForSplit(params *parameters) {
+	if cmd.id == none {
+		if len(params.input) > 0 {
+			param := params.input[0]
+
+			if fileExists(param.Value) {
+				cmd.inputFile = param.Value
+
+			} else if direcotryExists(param.Value) {
+				cmd.id = wrong
+				cmd.message = "input is a directory, but must be a file"
+
+			} else {
+				cmd.id = wrong
+				cmd.message = "input file does not exist"
+			}
+
+		} else {
+			cmd.id = wrong
+			cmd.message = "input file is not specified"
+		}
+	}
+}
+
+func (cmd *command) interpretDefaultSplitParts() {
+	if cmd.parts == 0 && cmd.bytes == 0 && cmd.lines == 0 {
+		cmd.parts = 2
 	}
 }
 
@@ -289,71 +268,6 @@ func parseBytes(bytesStr string) (int64, error) {
 		}
 	}
 	return bytes64, err
-}
-
-func parseFlaggedParameters(osArgs *osargs.OSArgs) *clResults {
-	results := new(clResults)
-	ioOp := osargs.NewAsgOp("", "=")
-	cmdOp := osargs.NewAsgOp(" ", "", "=")
-
-	results.help = osArgs.Parse("-h", "--help", "-help", "help")
-	results.version = osArgs.Parse("-v", "--version", "-version", "version")
-	results.copyright = osArgs.Parse("--copyright", "-copyright", "copyright")
-	results.input = osArgs.ParsePairs(ioOp, "-i", "--input", "-input", "input")
-	results.output = osArgs.ParsePairs(ioOp, "-o", "--output", "-output", "output")
-	results.parts = osArgs.ParsePairs(cmdOp, "-p", "--parts", "-parts", "parts")
-	results.bytes = osArgs.ParsePairs(cmdOp, "-b", "--bytes", "-bytes", "bytes")
-	results.lines = osArgs.ParsePairs(cmdOp, "-l", "--lines", "-lines", "lines")
-	results.concat = osArgs.Parse("-c", "--concat", "-concat", "concat")
-
-	return results
-}
-
-func parseInputPath(osArgs *osargs.OSArgs, restParams, results []osargs.Param) ([]osargs.Param, []osargs.Param) {
-	if len(results) == 0 {
-		for i, restArg := range restParams {
-			if stringPathLike(restArg.Value) || fileExists("./" + restArg.Value) {
-				restParams = removeResult(restParams, i)
-				results = append(results, osargs.Param{"", restArg.Value, "", restArg.Index})
-				break
-			}
-		}
-	}
-	return restParams, results
-}
-
-func parseOutputPath(osArgs *osargs.OSArgs, restParams, results []osargs.Param) ([]osargs.Param, []osargs.Param) {
-	if len(results) == 0 && len(restParams) > 0 {
-		restArg := restParams[0]
-		restParams = removeResult(restParams, 0)
-		results = append(results, osargs.Param{"", restArg.Value, "", restArg.Index})
-	}
-	return restParams, results
-}
-
-func removeResult(results []osargs.Param, index int) []osargs.Param {
-	copy(results[index:], results[index+1:])
-	return results[:len(results)-1]
-}
-
-func fileExists(path string) bool {
-	fileInfo, err := os.Stat(path)
-	return (err == nil || !os.IsNotExist(err)) && !fileInfo.IsDir()
-}
-
-func direcotryExists(path string) bool {
-	fileInfo, err := os.Stat(path)
-	return (err == nil || !os.IsNotExist(err)) && fileInfo.IsDir()
-}
-
-func stringPathLike(path string) bool {
-	bytes := []byte(path)
-	for _, b := range bytes {
-		if b == '.' || b == '/' || b == '\\' {
-			return true
-		}
-	}
-	return false
 }
 
 func abs(value int64) int64 {

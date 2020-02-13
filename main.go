@@ -10,18 +10,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/vbsw/semver"
 )
 
-var version semver.Version
-
 func main() {
-	version = semver.New(0, 1, 0)
-	cmd := newCmdParser()
+	cmd := commandFromCommandLine()
 
-	cmd.parseOSArgs()
-
-	switch cmd.cmdType {
+	switch cmd.id {
 	case none:
 		cmd.message = "unknown state"
 		printError(cmd)
@@ -29,18 +23,18 @@ func main() {
 		printInfo(cmd)
 	case split:
 		splitFile(cmd)
-	case concatenate:
+	case concat:
 		concatenateFiles(cmd)
 	default:
 		printError(cmd)
 	}
 }
 
-func printInfo(cmd *cmdParser) {
+func printInfo(cmd *command) {
 	fmt.Println(cmd.message)
 }
 
-func splitFile(cmd *cmdParser) {
+func splitFile(cmd *command) {
 	splitter := newFileSplitter(cmd.inputFile, cmd.outputFile)
 
 	if cmd.parts > 0 {
@@ -58,7 +52,7 @@ func splitFile(cmd *cmdParser) {
 	}
 }
 
-func concatenateFiles(cmd *cmdParser) {
+func concatenateFiles(cmd *command) {
 	concatenator := newFileConcatenator(cmd.inputFile, cmd.outputFile)
 	concatenator.concatenateFiles()
 
@@ -68,6 +62,6 @@ func concatenateFiles(cmd *cmdParser) {
 	}
 }
 
-func printError(cmd *cmdParser) {
+func printError(cmd *command) {
 	fmt.Println("error:", cmd.message)
 }
