@@ -10,7 +10,6 @@ package main
 import (
 	"errors"
 	"github.com/vbsw/osargs"
-	"os"
 )
 
 type parameters struct {
@@ -113,24 +112,4 @@ func (params *parameters) oneParamHasMultipleResults() bool {
 
 func (params *parameters) isInfo() bool {
 	return len(params.help) > 0 || len(params.version) > 0 || len(params.copyright) > 0
-}
-
-func stringPathLike(path string) bool {
-	bytes := []byte(path)
-	for _, b := range bytes {
-		if b == '.' || b == '/' || b == '\\' {
-			return true
-		}
-	}
-	return false
-}
-
-func fileExists(path string) bool {
-	fileInfo, err := os.Stat(path)
-	return (err == nil || !os.IsNotExist(err)) && !fileInfo.IsDir()
-}
-
-func direcotryExists(path string) bool {
-	fileInfo, err := os.Stat(path)
-	return (err == nil || !os.IsNotExist(err)) && fileInfo.IsDir()
 }

@@ -8,6 +8,7 @@
 package main
 
 import (
+	"os"
 	"strconv"
 )
 
@@ -125,7 +126,7 @@ func (cmd *command) setVersion() {
 
 func (cmd *command) setCopyright() {
 	cmd.id = info
-	cmd.message = "Copyright 2019, 2020 Vitali Baumtrok (vbsw@mailbox.org).\n"
+	cmd.message = "Copyright 2019, 2020, Vitali Baumtrok (vbsw@mailbox.org).\n"
 	cmd.message = cmd.message + "Distributed under the Boost Software License, Version 1.0."
 }
 
@@ -268,6 +269,16 @@ func parseBytes(bytesStr string) (int64, error) {
 		}
 	}
 	return bytes64, err
+}
+
+func fileExists(path string) bool {
+	fileInfo, err := os.Stat(path)
+	return (err == nil || !os.IsNotExist(err)) && !fileInfo.IsDir()
+}
+
+func direcotryExists(path string) bool {
+	fileInfo, err := os.Stat(path)
+	return (err == nil || !os.IsNotExist(err)) && fileInfo.IsDir()
 }
 
 func abs(value int64) int64 {
