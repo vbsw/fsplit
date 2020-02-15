@@ -10,7 +10,6 @@ package main
 import (
 	"errors"
 	"github.com/vbsw/osargs"
-	"github.com/vbsw/slices/remove"
 	"os"
 )
 
@@ -56,26 +55,26 @@ func parametersFromOSArgs() (*parameters, error) {
 }
 
 func (params *parameters) parseInput(args *osargs.Arguments, unparsedArgs []int) []int {
-	for i, unparsedArg := range unparsedArgs {
-		arg := args.Str[unparsedArg]
-
-		if stringPathLike(arg) || fileExists(arg) || fileExists("./"+arg) {
-			params.input = append(params.input, osargs.Parameter{"<none>", arg, "", unparsedArg})
-			unparsedArgs = remove.Int(unparsedArgs, i)
-			break
+	if len(params.input) == 0 {
+		// just accept the first unparsed argument, if input wasn't set explicitly
+		if len(unparsedArgs) > 0 {
+			index := unparsedArgs[0]
+			value := args.Str[index]
+			params.input = append(params.input, osargs.Parameter{"<none>", value, "", index})
+			unparsedArgs = unparsedArgs[1:]
 		}
 	}
 	return unparsedArgs
 }
 
 func (params *parameters) parseOutput(args *osargs.Arguments, unparsedArgs []int) []int {
-	for i, unparsedArg := range unparsedArgs {
-		arg := args.Str[unparsedArg]
-
-		if stringPathLike(arg) || direcotryExists(arg) || direcotryExists("./"+arg) {
-			params.input = append(params.input, osargs.Parameter{"<none>", arg, "", unparsedArg})
-			unparsedArgs = remove.Int(unparsedArgs, i)
-			break
+	if len(params.output) == 0 {
+		// just accept the first unparsed argument, if output wasn't set explicitly
+		if len(unparsedArgs) > 0 {
+			index := unparsedArgs[0]
+			value := args.Str[index]
+			params.output = append(params.output, osargs.Parameter{"<none>", value, "", index})
+			unparsedArgs = unparsedArgs[1:]
 		}
 	}
 	return unparsedArgs

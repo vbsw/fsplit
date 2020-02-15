@@ -106,21 +106,21 @@ func (cmd *command) setHelp() {
 	cmd.message = cmd.message + "USAGE\n"
 	cmd.message = cmd.message + "  fsplit ( INFO | SPLIT-CONCATENATE )\n\n"
 	cmd.message = cmd.message + "INFO\n"
-	cmd.message = cmd.message + "  -h           print this help\n"
-	cmd.message = cmd.message + "  -v           print version\n"
-	cmd.message = cmd.message + "  --copyright  print copyright\n\n"
+	cmd.message = cmd.message + "  -h, --help    print this help\n"
+	cmd.message = cmd.message + "  -v, --version print version\n"
+	cmd.message = cmd.message + "  --copyright   print copyright\n\n"
 	cmd.message = cmd.message + "SPLIT-CONCATENATE\n"
 	cmd.message = cmd.message + "  [COMMAND] INPUT-FILE [OUTPUT-FILE]\n\n"
 	cmd.message = cmd.message + "COMMAND\n"
-	cmd.message = cmd.message + "  -p=N         split file into N parts (chunks)\n"
-	cmd.message = cmd.message + "  -b=N[U]      split file into N bytes per chunk, U = unit (k/K, m/M or g/G)\n"
-	cmd.message = cmd.message + "  -l=N         split file into N lines per chunk\n"
-	cmd.message = cmd.message + "  -c           concatenate files (INPUT-FILE is only one file, the first one)"
+	cmd.message = cmd.message + "  -p=N          split file into N parts (chunks)\n"
+	cmd.message = cmd.message + "  -b=N[U]       split file into N bytes per chunk, U = unit (k/K, m/M or g/G)\n"
+	cmd.message = cmd.message + "  -l=N          split file into N lines per chunk\n"
+	cmd.message = cmd.message + "  -c            concatenate files (INPUT-FILE is only one file, the first one)"
 }
 
 func (cmd *command) setVersion() {
 	cmd.id = info
-	cmd.message = "0.1.0"
+	cmd.message = "0.2.0"
 }
 
 func (cmd *command) setCopyright() {

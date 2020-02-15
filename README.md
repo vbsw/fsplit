@@ -17,18 +17,18 @@ fsplit is distributed in the hope that it will be useful, but WITHOUT ANY WARRAN
 	fsplit ( INFO | SPLIT-CONCATENATE )
 
 	INFO
-		-h           print this help
-		-v           print version
-		--copyright  print copyright
+		-h, --help    print this help
+		-v, --version print version
+		--copyright   print copyright
 
 	SPLIT-CONCATENATE
 		[COMMAND] INPUT-FILE [OUTPUT-FILE]
 
 	COMMAND
-		-p=N         split file into N parts (chunks)
-		-b=N[U]      split file into N bytes per chunk, U = unit (k/K, m/M or g/G)
-		-l=N         split file into N lines per chunk
-		-c           concatenate files (INPUT-FILE is only one file, the first one)
+		-p=N          split file into N parts (chunks)
+		-b=N[U]       split file into N bytes per chunk, U = unit (k/K, m/M or g/G)
+		-l=N          split file into N lines per chunk
+		-c            concatenate files (INPUT-FILE is only one file, the first one)
 
 ## References
 - https://golang.org/doc/install
