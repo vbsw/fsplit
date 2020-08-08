@@ -5,6 +5,8 @@
 ## About
 fsplit splits one file into many or combines them back to one. fsplit is published on <https://github.com/vbsw/fsplit> and <https://gitlab.com/vbsw/fsplit>.
 
+Download [binaries](https://github.com/vbsw/fsplit/archive/bin.zip).
+
 ## Copyright
 Copyright 2019, 2020, Vitali Baumtrok (vbsw@mailbox.org).
 

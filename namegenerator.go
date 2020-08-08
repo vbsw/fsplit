@@ -9,6 +9,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/vbsw/checkfile"
 	"strconv"
 )
 
@@ -65,7 +66,7 @@ func analizeFileName(fileName string) (string, int) {
 		fileNameWDot := fileName + "."
 		for i := 1; i < 11; i++ {
 			suffix := fmt.Sprintf(suffixFormat(i), 1)
-			if fileExists(fileNameWDot + suffix) {
+			if checkfile.IsFile(fileNameWDot + suffix) {
 				suffixLength = i
 				break
 			}

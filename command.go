@@ -8,6 +8,7 @@
 package main
 
 import (
+	"github.com/vbsw/checkfile"
 	"os"
 	"strconv"
 )
@@ -34,21 +35,21 @@ const (
 
 func commandFromCommandLine() *command {
 	cmd := new(command)
-	params, err := parametersFromOSArgs()
+	args, err := argumentsFromOSArgs()
 
 	if err == nil {
 
-		if params == nil {
+		if args == nil {
 			cmd.setShortInfo()
 
-		} else if params.incompatibleArguments() {
+		} else if args.incompatibleArguments() {
 			cmd.setWrongArgumentUsage()
 
-		} else if params.oneParamHasMultipleResults() {
+		} else if args.oneParamHasMultipleResults() {
 			cmd.setWrongArgumentUsage()
 
 		} else {
-			cmd.setValidCommand(params)
+			cmd.setValidCommand(args)
 		}
 	} else {
 		cmd.id = wrong
@@ -67,32 +68,32 @@ func (cmd *command) setWrongArgumentUsage() {
 	cmd.message = "wrong argument usage"
 }
 
-func (cmd *command) setValidCommand(params *parameters) {
-	if len(params.help) > 0 {
+func (cmd *command) setValidCommand(args *arguments) {
+	if len(args.help) > 0 {
 		cmd.setHelp()
 
-	} else if len(params.version) > 0 {
+	} else if len(args.version) > 0 {
 		cmd.setVersion()
 
-	} else if len(params.copyright) > 0 {
+	} else if len(args.copyright) > 0 {
 		cmd.setCopyright()
 
-	} else if len(params.concat) > 0 {
-		cmd.interpretInputForConcat(params)
-		cmd.interpretOutput(params)
-		cmd.interpretParts(params)
-		cmd.interpretBytes(params)
-		cmd.interpretLines(params)
+	} else if len(args.concat) > 0 {
+		cmd.interpretInputForConcat(args)
+		cmd.interpretOutput(args)
+		cmd.interpretParts(args)
+		cmd.interpretBytes(args)
+		cmd.interpretLines(args)
 
 		if cmd.id == none {
 			cmd.id = concat
 		}
 	} else {
-		cmd.interpretInputForSplit(params)
-		cmd.interpretOutput(params)
-		cmd.interpretParts(params)
-		cmd.interpretBytes(params)
-		cmd.interpretLines(params)
+		cmd.interpretInputForSplit(args)
+		cmd.interpretOutput(args)
+		cmd.interpretParts(args)
+		cmd.interpretBytes(args)
+		cmd.interpretLines(args)
 		cmd.interpretDefaultSplitParts()
 
 		if cmd.id == none {
@@ -121,7 +122,7 @@ func (cmd *command) setHelp() {
 
 func (cmd *command) setVersion() {
 	cmd.id = info
-	cmd.message = "0.2.0"
+	cmd.message = "0.3.0"
 }
 
 func (cmd *command) setCopyright() {
@@ -130,10 +131,10 @@ func (cmd *command) setCopyright() {
 	cmd.message = cmd.message + "Distributed under the Boost Software License, Version 1.0."
 }
 
-func (cmd *command) interpretInputForConcat(params *parameters) {
+func (cmd *command) interpretInputForConcat(args *arguments) {
 	if cmd.id == none {
-		if len(params.input) > 0 {
-			param := params.input[0]
+		if len(args.input) > 0 {
+			param := args.input[0]
 
 			if direcotryExists(param.Value) {
 				cmd.id = wrong
@@ -150,20 +151,20 @@ func (cmd *command) interpretInputForConcat(params *parameters) {
 	}
 }
 
-func (cmd *command) interpretOutput(params *parameters) {
+func (cmd *command) interpretOutput(args *arguments) {
 	if cmd.id == none {
-		if len(params.output) > 0 {
-			cmd.outputFile = params.output[0].Value
+		if len(args.output) > 0 {
+			cmd.outputFile = args.output[0].Value
 		} else {
 			cmd.outputFile = cmd.inputFile
 		}
 	}
 }
 
-func (cmd *command) interpretParts(params *parameters) {
+func (cmd *command) interpretParts(args *arguments) {
 	if cmd.id == none {
-		if len(params.parts) > 0 {
-			parts, err := strconv.Atoi(params.parts[0].Value)
+		if len(args.parts) > 0 {
+			parts, err := strconv.Atoi(args.parts[0].Value)
 			if err == nil {
 				cmd.parts = abs(int64(parts))
 			} else {
@@ -174,10 +175,10 @@ func (cmd *command) interpretParts(params *parameters) {
 	}
 }
 
-func (cmd *command) interpretBytes(params *parameters) {
+func (cmd *command) interpretBytes(args *arguments) {
 	if cmd.id == none {
-		if len(params.bytes) > 0 {
-			bytes, err := parseBytes(params.bytes[0].Value)
+		if len(args.bytes) > 0 {
+			bytes, err := parseBytes(args.bytes[0].Value)
 			if err == nil {
 				cmd.bytes = abs(bytes)
 			} else {
@@ -188,10 +189,10 @@ func (cmd *command) interpretBytes(params *parameters) {
 	}
 }
 
-func (cmd *command) interpretLines(params *parameters) {
+func (cmd *command) interpretLines(args *arguments) {
 	if cmd.id == none {
-		if len(params.lines) > 0 {
-			lines, err := strconv.Atoi(params.lines[0].Value)
+		if len(args.lines) > 0 {
+			lines, err := strconv.Atoi(args.lines[0].Value)
 			if err == nil {
 				cmd.lines = abs(int64(lines))
 			} else {
@@ -202,15 +203,15 @@ func (cmd *command) interpretLines(params *parameters) {
 	}
 }
 
-func (cmd *command) interpretInputForSplit(params *parameters) {
+func (cmd *command) interpretInputForSplit(args *arguments) {
 	if cmd.id == none {
-		if len(params.input) > 0 {
-			param := params.input[0]
+		if len(args.input) > 0 {
+			param := args.input[0]
 
-			if fileExists(param.Value) {
+			if checkfile.IsFile(param.Value) {
 				cmd.inputFile = param.Value
 
-			} else if direcotryExists(param.Value) {
+			} else if checkfile.IsDirectory(param.Value) {
 				cmd.id = wrong
 				cmd.message = "input is a directory, but must be a file"
 
@@ -269,11 +270,6 @@ func parseBytes(bytesStr string) (int64, error) {
 		}
 	}
 	return bytes64, err
-}
-
-func fileExists(path string) bool {
-	fileInfo, err := os.Stat(path)
-	return (err == nil || !os.IsNotExist(err)) && !fileInfo.IsDir()
 }
 
 func direcotryExists(path string) bool {
