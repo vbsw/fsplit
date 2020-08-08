@@ -122,7 +122,7 @@ func (cmd *command) setHelp() {
 
 func (cmd *command) setVersion() {
 	cmd.id = info
-	cmd.message = "0.3.0"
+	cmd.message = "1.0.0"
 }
 
 func (cmd *command) setCopyright() {
