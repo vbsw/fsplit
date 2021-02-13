@@ -1,5 +1,5 @@
 /*
- *       Copyright 2019, 2020, Vitali Baumtrok.
+ *      Copyright 2019 - 2021, Vitali Baumtrok.
  * Distributed under the Boost Software License, Version 1.0.
  *     (See accompanying file LICENSE or copy at
  *        http://www.boost.org/LICENSE_1_0.txt)
@@ -35,21 +35,21 @@ const (
 
 func commandFromCommandLine() *command {
 	cmd := new(command)
-	args, err := argumentsFromOSArgs()
+	params, err := parametersFromOSArgs()
 
 	if err == nil {
 
-		if args == nil {
+		if params == nil {
 			cmd.setShortInfo()
 
-		} else if args.incompatibleArguments() {
+		} else if params.incompatibleParameters() {
 			cmd.setWrongArgumentUsage()
 
-		} else if args.oneParamHasMultipleResults() {
+		} else if params.oneParamHasMultipleResults() {
 			cmd.setWrongArgumentUsage()
 
 		} else {
-			cmd.setValidCommand(args)
+			cmd.setValidCommand(params)
 		}
 	} else {
 		cmd.id = wrong
@@ -68,32 +68,32 @@ func (cmd *command) setWrongArgumentUsage() {
 	cmd.message = "wrong argument usage"
 }
 
-func (cmd *command) setValidCommand(args *arguments) {
-	if len(args.help) > 0 {
+func (cmd *command) setValidCommand(params *parameters) {
+	if params.help.Available() {
 		cmd.setHelp()
 
-	} else if len(args.version) > 0 {
+	} else if params.version.Available() {
 		cmd.setVersion()
 
-	} else if len(args.copyright) > 0 {
+	} else if params.copyright.Available() {
 		cmd.setCopyright()
 
-	} else if len(args.concat) > 0 {
-		cmd.interpretInputForConcat(args)
-		cmd.interpretOutput(args)
-		cmd.interpretParts(args)
-		cmd.interpretBytes(args)
-		cmd.interpretLines(args)
+	} else if params.concat.Available() {
+		cmd.interpretInputForConcat(params)
+		cmd.interpretOutput(params)
+		cmd.interpretParts(params)
+		cmd.interpretBytes(params)
+		cmd.interpretLines(params)
 
 		if cmd.id == none {
 			cmd.id = concat
 		}
 	} else {
-		cmd.interpretInputForSplit(args)
-		cmd.interpretOutput(args)
-		cmd.interpretParts(args)
-		cmd.interpretBytes(args)
-		cmd.interpretLines(args)
+		cmd.interpretInputForSplit(params)
+		cmd.interpretOutput(params)
+		cmd.interpretParts(params)
+		cmd.interpretBytes(params)
+		cmd.interpretLines(params)
 		cmd.interpretDefaultSplitParts()
 
 		if cmd.id == none {
@@ -106,12 +106,12 @@ func (cmd *command) setHelp() {
 	cmd.id = info
 	cmd.message = "fsplit splits files into many, or combines them back to one\n\n"
 	cmd.message = cmd.message + "USAGE\n"
-	cmd.message = cmd.message + "  fsplit ( INFO | SPLIT-CONCATENATE )\n\n"
+	cmd.message = cmd.message + "  fsplit ( INFO | SPLIT/CONCATENATE )\n\n"
 	cmd.message = cmd.message + "INFO\n"
 	cmd.message = cmd.message + "  -h, --help    print this help\n"
 	cmd.message = cmd.message + "  -v, --version print version\n"
 	cmd.message = cmd.message + "  --copyright   print copyright\n\n"
-	cmd.message = cmd.message + "SPLIT-CONCATENATE\n"
+	cmd.message = cmd.message + "SPLIT/CONCATENATE\n"
 	cmd.message = cmd.message + "  [COMMAND] INPUT-FILE [OUTPUT-FILE]\n\n"
 	cmd.message = cmd.message + "COMMAND\n"
 	cmd.message = cmd.message + "  -p=N          split file into N parts (chunks)\n"
@@ -131,17 +131,17 @@ func (cmd *command) setCopyright() {
 	cmd.message = cmd.message + "Distributed under the Boost Software License, Version 1.0."
 }
 
-func (cmd *command) interpretInputForConcat(args *arguments) {
+func (cmd *command) interpretInputForConcat(params *parameters) {
 	if cmd.id == none {
-		if len(args.input) > 0 {
-			param := args.input[0]
+		if params.input.Available() {
+			inputFile := params.input.Values()[0]
 
-			if direcotryExists(param.Value) {
+			if direcotryExists(inputFile) {
 				cmd.id = wrong
 				cmd.message = "input is a directory, but must be a file"
 
 			} else {
-				cmd.inputFile = param.Value
+				cmd.inputFile = inputFile
 			}
 
 		} else {
@@ -151,20 +151,20 @@ func (cmd *command) interpretInputForConcat(args *arguments) {
 	}
 }
 
-func (cmd *command) interpretOutput(args *arguments) {
+func (cmd *command) interpretOutput(params *parameters) {
 	if cmd.id == none {
-		if len(args.output) > 0 {
-			cmd.outputFile = args.output[0].Value
+		if params.output.Available() {
+			cmd.outputFile = params.output.Values()[0]
 		} else {
 			cmd.outputFile = cmd.inputFile
 		}
 	}
 }
 
-func (cmd *command) interpretParts(args *arguments) {
+func (cmd *command) interpretParts(params *parameters) {
 	if cmd.id == none {
-		if len(args.parts) > 0 {
-			parts, err := strconv.Atoi(args.parts[0].Value)
+		if params.parts.Available() {
+			parts, err := strconv.Atoi(params.parts.Values()[0])
 			if err == nil {
 				cmd.parts = abs(int64(parts))
 			} else {
@@ -175,10 +175,10 @@ func (cmd *command) interpretParts(args *arguments) {
 	}
 }
 
-func (cmd *command) interpretBytes(args *arguments) {
+func (cmd *command) interpretBytes(params *parameters) {
 	if cmd.id == none {
-		if len(args.bytes) > 0 {
-			bytes, err := parseBytes(args.bytes[0].Value)
+		if params.bytes.Available() {
+			bytes, err := parseBytes(params.bytes.Values()[0])
 			if err == nil {
 				cmd.bytes = abs(bytes)
 			} else {
@@ -189,10 +189,10 @@ func (cmd *command) interpretBytes(args *arguments) {
 	}
 }
 
-func (cmd *command) interpretLines(args *arguments) {
+func (cmd *command) interpretLines(params *parameters) {
 	if cmd.id == none {
-		if len(args.lines) > 0 {
-			lines, err := strconv.Atoi(args.lines[0].Value)
+		if params.lines.Available() {
+			lines, err := strconv.Atoi(params.lines.Values()[0])
 			if err == nil {
 				cmd.lines = abs(int64(lines))
 			} else {
@@ -203,15 +203,15 @@ func (cmd *command) interpretLines(args *arguments) {
 	}
 }
 
-func (cmd *command) interpretInputForSplit(args *arguments) {
+func (cmd *command) interpretInputForSplit(params *parameters) {
 	if cmd.id == none {
-		if len(args.input) > 0 {
-			param := args.input[0]
+		if params.input.Available() {
+			inputFile := params.input.Values()[0]
 
-			if checkfile.IsFile(param.Value) {
-				cmd.inputFile = param.Value
+			if checkfile.IsFile(inputFile) {
+				cmd.inputFile = inputFile
 
-			} else if checkfile.IsDirectory(param.Value) {
+			} else if checkfile.IsDirectory(inputFile) {
 				cmd.id = wrong
 				cmd.message = "input is a directory, but must be a file"
 

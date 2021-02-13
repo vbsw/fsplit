@@ -8,7 +8,7 @@ fsplit splits one file into many or combines them back to one. fsplit is publish
 Download [binaries](https://github.com/vbsw/fsplit/archive/bin.zip).
 
 ## Copyright
-Copyright 2019, 2020, Vitali Baumtrok (vbsw@mailbox.org).
+Copyright 2019, 2020, 2021 Vitali Baumtrok (vbsw@mailbox.org).
 
 fsplit is distributed under the Boost Software License, version 1.0. (See accompanying file LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
 
@@ -16,14 +16,14 @@ fsplit is distributed in the hope that it will be useful, but WITHOUT ANY WARRAN
 
 ## Usage
 
-	fsplit ( INFO | SPLIT-CONCATENATE )
+	fsplit ( INFO | SPLIT/CONCATENATE )
 
 	INFO
 		-h, --help    print this help
 		-v, --version print version
 		--copyright   print copyright
 
-	SPLIT-CONCATENATE
+	SPLIT/CONCATENATE
 		[COMMAND] INPUT-FILE [OUTPUT-FILE]
 
 	COMMAND
