@@ -43,8 +43,8 @@ func parametersFromOSArgs() (*parameters, error) {
 		params.lines = cl.NewParam().ParsePairs(asgOp, "-l", "--lines", "-lines", "lines")
 
 		unparsedArgs := cl.UnparsedArgs()
-		unparsedArgs = params.parseInput(cl, unparsedArgs)
-		unparsedArgs = params.parseOutput(cl, unparsedArgs)
+		unparsedArgs = params.parseInput(unparsedArgs)
+		unparsedArgs = params.parseOutput(unparsedArgs)
 
 		if len(unparsedArgs) > 0 {
 			unknownArg := unparsedArgs[0]
@@ -54,7 +54,7 @@ func parametersFromOSArgs() (*parameters, error) {
 	return params, err
 }
 
-func (params *parameters) parseInput(cl *cmdl.CommandLine, unparsedArgs []string) []string {
+func (params *parameters) parseInput(unparsedArgs []string) []string {
 	if !params.input.Available() {
 		// just accept the first unparsed argument, if input wasn't set explicitly
 		if len(unparsedArgs) > 0 {
@@ -65,7 +65,7 @@ func (params *parameters) parseInput(cl *cmdl.CommandLine, unparsedArgs []string
 	return unparsedArgs
 }
 
-func (params *parameters) parseOutput(cl *cmdl.CommandLine, unparsedArgs []string) []string {
+func (params *parameters) parseOutput(unparsedArgs []string) []string {
 	if params.output.Available() {
 		// just accept the first unparsed argument, if output wasn't set explicitly
 		if len(unparsedArgs) > 0 {
