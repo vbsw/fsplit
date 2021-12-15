@@ -9,40 +9,40 @@ package main
 
 import (
 	"errors"
-	"github.com/vbsw/cmdl"
+	"github.com/vbsw/osargs"
 )
 
 type parameters struct {
-	help      *cmdl.Parameter
-	version   *cmdl.Parameter
-	copyright *cmdl.Parameter
-	concat    *cmdl.Parameter
-	input     *cmdl.Parameter
-	output    *cmdl.Parameter
-	parts     *cmdl.Parameter
-	bytes     *cmdl.Parameter
-	lines     *cmdl.Parameter
+	help      *osargs.Result
+	version   *osargs.Result
+	copyright *osargs.Result
+	concat    *osargs.Result
+	input     *osargs.Result
+	output    *osargs.Result
+	parts     *osargs.Result
+	bytes     *osargs.Result
+	lines     *osargs.Result
 }
 
 func parametersFromOSArgs() (*parameters, error) {
 	var params *parameters
 	var err error
-	cl := cmdl.New()
-	asgOp := cmdl.NewAsgOp(true, true, "=")
+	args := osargs.New()
+	delimiter := osargs.NewDelimiter(true, true, "=")
 
-	if len(cl.Args()) > 0 {
+	if len(args.Values) > 0 {
 		params = new(parameters)
-		params.help = cl.NewParam().Parse("-h", "--help", "-help", "help")
-		params.version = cl.NewParam().Parse("-v", "--version", "-version", "version")
-		params.copyright = cl.NewParam().Parse("--copyright", "-copyright", "copyright")
-		params.concat = cl.NewParam().Parse("-c", "--concat", "-concat", "concat")
-		params.input = cl.NewParam().ParsePairs(asgOp, "-i", "--input", "-input", "input")
-		params.output = cl.NewParam().ParsePairs(asgOp, "-o", "--output", "-output", "output")
-		params.parts = cl.NewParam().ParsePairs(asgOp, "-p", "--parts", "-parts", "parts")
-		params.bytes = cl.NewParam().ParsePairs(asgOp, "-b", "--bytes", "-bytes", "bytes")
-		params.lines = cl.NewParam().ParsePairs(asgOp, "-l", "--lines", "-lines", "lines")
+		params.help = args.Parse("-h", "--help", "-help", "help")
+		params.version = args.Parse("-v", "--version", "-version", "version")
+		params.copyright = args.Parse("--copyright", "-copyright", "copyright")
+		params.concat = args.Parse("-c", "--concat", "-concat", "concat")
+		params.input = args.ParsePairs(delimiter, "-i", "--input", "-input", "input")
+		params.output = args.ParsePairs(delimiter, "-o", "--output", "-output", "output")
+		params.parts = args.ParsePairs(delimiter, "-p", "--parts", "-parts", "parts")
+		params.bytes = args.ParsePairs(delimiter, "-b", "--bytes", "-bytes", "bytes")
+		params.lines = args.ParsePairs(delimiter, "-l", "--lines", "-lines", "lines")
 
-		unparsedArgs := cl.UnparsedArgs()
+		unparsedArgs := args.UnparsedArgs()
 		unparsedArgs = params.parseInput(unparsedArgs)
 		unparsedArgs = params.parseOutput(unparsedArgs)
 
@@ -58,7 +58,7 @@ func (params *parameters) parseInput(unparsedArgs []string) []string {
 	if !params.input.Available() {
 		// just accept the first unparsed argument, if input wasn't set explicitly
 		if len(unparsedArgs) > 0 {
-			params.input.Add("<none>", unparsedArgs[0])
+			params.input.Values = append(params.input.Values, unparsedArgs[0])
 			unparsedArgs = unparsedArgs[1:]
 		}
 	}
@@ -69,7 +69,7 @@ func (params *parameters) parseOutput(unparsedArgs []string) []string {
 	if params.output.Available() {
 		// just accept the first unparsed argument, if output wasn't set explicitly
 		if len(unparsedArgs) > 0 {
-			params.output.Add("<none>", unparsedArgs[0])
+			params.output.Values = append(params.output.Values, unparsedArgs[0])
 			unparsedArgs = unparsedArgs[1:]
 		}
 	}

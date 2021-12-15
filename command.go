@@ -134,7 +134,7 @@ func (cmd *command) setCopyright() {
 func (cmd *command) interpretInputForConcat(params *parameters) {
 	if cmd.id == none {
 		if params.input.Available() {
-			inputFile := params.input.Values()[0]
+			inputFile := params.input.Values[0]
 
 			if direcotryExists(inputFile) {
 				cmd.id = wrong
@@ -154,7 +154,7 @@ func (cmd *command) interpretInputForConcat(params *parameters) {
 func (cmd *command) interpretOutput(params *parameters) {
 	if cmd.id == none {
 		if params.output.Available() {
-			cmd.outputFile = params.output.Values()[0]
+			cmd.outputFile = params.output.Values[0]
 		} else {
 			cmd.outputFile = cmd.inputFile
 		}
@@ -164,7 +164,7 @@ func (cmd *command) interpretOutput(params *parameters) {
 func (cmd *command) interpretParts(params *parameters) {
 	if cmd.id == none {
 		if params.parts.Available() {
-			parts, err := strconv.Atoi(params.parts.Values()[0])
+			parts, err := strconv.Atoi(params.parts.Values[0])
 			if err == nil {
 				cmd.parts = abs(int64(parts))
 			} else {
@@ -178,7 +178,7 @@ func (cmd *command) interpretParts(params *parameters) {
 func (cmd *command) interpretBytes(params *parameters) {
 	if cmd.id == none {
 		if params.bytes.Available() {
-			bytes, err := parseBytes(params.bytes.Values()[0])
+			bytes, err := parseBytes(params.bytes.Values[0])
 			if err == nil {
 				cmd.bytes = abs(bytes)
 			} else {
@@ -192,7 +192,7 @@ func (cmd *command) interpretBytes(params *parameters) {
 func (cmd *command) interpretLines(params *parameters) {
 	if cmd.id == none {
 		if params.lines.Available() {
-			lines, err := strconv.Atoi(params.lines.Values()[0])
+			lines, err := strconv.Atoi(params.lines.Values[0])
 			if err == nil {
 				cmd.lines = abs(int64(lines))
 			} else {
@@ -206,7 +206,7 @@ func (cmd *command) interpretLines(params *parameters) {
 func (cmd *command) interpretInputForSplit(params *parameters) {
 	if cmd.id == none {
 		if params.input.Available() {
-			inputFile := params.input.Values()[0]
+			inputFile := params.input.Values[0]
 
 			if checkfile.IsFile(inputFile) {
 				cmd.inputFile = inputFile
