@@ -1,0 +1,6 @@
+github.com/vbsw/checkfile v0.1.0 h1:7xqs3Y5T2rWg/Jx7wOiw3EgfXHaXhBFPW9mmmd9+H+U=
+github.com/vbsw/checkfile v0.1.0/go.mod h1:pZUxPEC3SkYFQ3gorw0NX7bAyfZ8ZMbrVhaTop3V+a8=
+github.com/vbsw/osargs v0.1.0 h1:oLMeyRx3OQNb5rbg3F6ZLcS8HlxxpSe3AjMT3MXEY9E=
+github.com/vbsw/osargs v0.1.0/go.mod h1:GO4vbS8Am0kK2lNBPOcDqJ9aWULH0Ah9Inw8JShEmlU=
+github.com/vbsw/slices v1.2.0 h1:4l3gWVLHuGqE7nZQpiRttxCrGmwUFW8Buhuv2/+JcCk=
+github.com/vbsw/slices v1.2.0/go.mod h1:Noj39GRBmqRtta0dqZnRXWOUwMNX7vL3sy6l52G/TdI=
