@@ -10,6 +10,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 )
 
 func main() {
@@ -64,4 +65,14 @@ func concatenateFiles(cmd *command) {
 
 func printError(cmd *command) {
 	fmt.Println("error:", cmd.message)
+}
+
+func isFile(path string) bool {
+	info, err := os.Stat(path)
+	return info != nil && !info.IsDir() && (err == nil || !os.IsNotExist(err))
+}
+
+func isDirectory(path string) bool {
+	info, err := os.Stat(path)
+	return info != nil && info.IsDir() && (err == nil || !os.IsNotExist(err))
 }

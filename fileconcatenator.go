@@ -9,7 +9,6 @@ package main
 
 import (
 	"errors"
-	"github.com/vbsw/checkfile"
 	"io"
 	"os"
 )
@@ -33,7 +32,7 @@ func (concatenator *fileConcatenator) concatenateFiles() {
 	inputFile := nameGenerator.nextFileName()
 	outputFile := concatenator.finalOutputFile(nameGenerator.fileName)
 
-	if checkfile.IsFile(inputFile) {
+	if isFile(inputFile) {
 		in, inErr := os.Open(inputFile)
 
 		if inErr == nil {

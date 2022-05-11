@@ -8,7 +8,6 @@
 package main
 
 import (
-	"github.com/vbsw/checkfile"
 	"os"
 	"strconv"
 )
@@ -208,10 +207,10 @@ func (cmd *command) interpretInputForSplit(params *parameters) {
 		if params.input.Available() {
 			inputFile := params.input.Values[0]
 
-			if checkfile.IsFile(inputFile) {
+			if isFile(inputFile) {
 				cmd.inputFile = inputFile
 
-			} else if checkfile.IsDirectory(inputFile) {
+			} else if isDirectory(inputFile) {
 				cmd.id = wrong
 				cmd.message = "input is a directory, but must be a file"
 
