@@ -157,21 +157,21 @@ func (params *tParameters) infoAvailable() bool {
 func (params *tParameters) isCompatible() bool {
 	// same parameter must not be multiple
 	if isMultiple(params.infoParams) || isMultiple(params.cmdParams) {
-		return true
+		return false
 	}
 	// either info or command
 	if anyAvailable(params.infoParams) && anyAvailable(params.cmdParams) {
-		return true
+		return false
 	}
 	// no mixed info parameters
 	if isMixed(params.infoParams...) {
-		return true
+		return false
 	}
 	// no mixed command parameters
 	if isMixed(params.concat, params.parts, params.bytes, params.lines) {
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
 func (params *tParameters) validateIODirectories() error {
@@ -234,22 +234,23 @@ func (pathGenerator *tPathGenerator) nextPath() string {
 func concatenateFiles(params *tParameters) error {
 	pathGenerator := newPathGeneratorForConcat(params.input.Values[0])
 	inputPath := pathGenerator.nextPath()
-	outputPath := params.outputPathConcat(pathGenerator.path)
-	out, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	// check input first
+	in, err := os.Open(inputPath)
 	if err == nil {
-		defer out.Close()
-		var in *os.File
-		in, err = os.Open(inputPath)
-		for err == nil {
-			_, err = io.Copy(out, in)
-			in.Close()
-			if err == nil || err == io.EOF {
-				inputPath = pathGenerator.nextPath()
-				in, err = os.Open(inputPath)
+		var out *os.File
+		outputPath := params.outputPathConcat(pathGenerator.path)
+		out, err = os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		if err == nil {
+			defer out.Close()
+			in, err = copyFileConcat(out, in, pathGenerator)
+			for err == nil {
+				in, err = copyFileConcat(out, in, pathGenerator)
 			}
-		}
-		if os.IsNotExist(err) {
-			err = nil
+			if os.IsNotExist(err) {
+				err = nil
+			}
+		} else {
+			in.Close()
 		}
 	}
 	return err
@@ -283,7 +284,7 @@ func splitFileByParts(params *tParameters) error {
 			pathGenerator := newPathGeneratorForSplit(params.output.Values[0], int(parts))
 			for copied < inputSize && err == nil {
 				outputPath := pathGenerator.nextPath()
-				copied, err = copyFile(outputPath, in, outputSize, copied)
+				copied, err = copyFileSplit(outputPath, in, outputSize, copied)
 			}
 		}
 	}
@@ -311,7 +312,7 @@ func splitFileBySize(params *tParameters) error {
 			pathGenerator := newPathGeneratorForSplit(params.output.Values[0], int(parts))
 			for copied < inputSize && err == nil {
 				outputPath := pathGenerator.nextPath()
-				copied, err = copyFile(outputPath, in, outputSize, copied)
+				copied, err = copyFileSplit(outputPath, in, outputSize, copied)
 			}
 		}
 	}
@@ -332,7 +333,7 @@ func splitFileByLines(params *tParameters) error {
 				pathGenerator := newPathGeneratorForSplit(params.output.Values[0], len(inputSizes))
 				for _, outputSize := range inputSizes {
 					outputPath := pathGenerator.nextPath()
-					copied, err = copyFile(outputPath, in, outputSize, copied)
+					copied, err = copyFileSplit(outputPath, in, outputSize, copied)
 				}
 			}
 		}
@@ -419,7 +420,17 @@ func partSize(parts, inputSize int64) int64 {
 	return chunkSize
 }
 
-func copyFile(path string, in *os.File, size, copiedTotal int64) (int64, error) {
+func copyFileConcat(out, in *os.File, pathGenerator *tPathGenerator) (*os.File, error) {
+	_, err := io.Copy(out, in)
+	in.Close()
+	if err == nil || err == io.EOF {
+		inputPath := pathGenerator.nextPath()
+		in, err = os.Open(inputPath)
+	}
+	return in, err
+}
+
+func copyFileSplit(path string, in *os.File, size, copiedTotal int64) (int64, error) {
 	out, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err == nil {
 		defer out.Close()
@@ -568,8 +579,7 @@ func printShortInfo() {
 }
 
 func printHelp() {
-	message := "fsplit splits files into many, or combines them back to one\n\n"
-	message += "\nUSAGE\n"
+	message := "\nUSAGE\n"
 	message += "  fsplit ( INFO | SPLIT/CONCATENATE )\n\n"
 	message += "INFO\n"
 	message += "  -h, --help    print this help\n"
@@ -586,7 +596,7 @@ func printHelp() {
 }
 
 func printVersion() {
-	fmt.Println("1.0.1")
+	fmt.Println("1.0.3")
 }
 
 func printExample() {
