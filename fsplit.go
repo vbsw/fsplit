@@ -596,7 +596,7 @@ func printHelp() {
 }
 
 func printVersion() {
-	fmt.Println("1.0.3")
+	fmt.Println("1.2.0")
 }
 
 func printExample() {
