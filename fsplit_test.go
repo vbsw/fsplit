@@ -84,7 +84,7 @@ func TestParseOSArgsB(t *testing.T) {
 			t.Error("not existing input directory not recognized")
 		}
 	} else {
-		t.Error("check on file existance too early")
+		t.Error("check on file existence too early")
 	}
 }
 
